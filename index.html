@@ -1,0 +1,693 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentação da API Cartão Tudo Ok</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="root" class="container mx-auto p-4"></div>
+
+  <script type="text/babel">
+    const Navbar = () => (
+      <nav class="bg-blue-600 text-white p-4">
+        <h1 class="text-2xl font-bold">Documentação da API - Cartão Tudo Ok</h1>
+      </nav>
+    );
+
+    const EndpointSection = ({ title, description, objectStructure, exampleResponse }) => (
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-semibold mb-2">{title}</h2>
+        <p class="text-gray-700 mb-4">{description}</p>
+        <h3 class="text-lg font-semibold mb-2">Estrutura do Objeto</h3>
+        <pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto">{objectStructure}</pre>
+        {exampleResponse && (
+          <>
+            <h3 class="text-lg font-semibold mb-2 mt-4">Exemplo de Resposta</h3>
+            <pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto">{exampleResponse}</pre>
+          </>
+        )}
+      </div>
+    );
+
+    const ConclusionSection = () => (
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-semibold mb-2">Conclusão sobre IDs de 7 Dígitos</h2>
+        <p class="text-gray-700 mb-4">
+          Após a análise de todas as entidades fornecidas, foram encontrados IDs numéricos com exatamente 7 dígitos nas seguintes entidades:
+        </p>
+        <ul class="list-disc pl-6 mb-4">
+          <li><strong>Webhook</strong>: <code>bill_items[*].product.id</code>: 1128644, 1181275, 1181273, 1181272, 1211342, 1181274 (não únicos entre os dois JSONs, pois representam os mesmos produtos).</li>
+          <li><strong>Assinaturas</strong>: <code>usuario.id</code>: 95427883, <code>bills.plan_id</code>: 333188.</li>
+          <li><strong>Carterinha</strong>: <code>matricula</code>: 104219.</li>
+          <li><strong>ErrorLog</strong>: <code>data.customer_id</code>: 73733174, <code>data.plan_id</code>: 333188.</li>
+          <li><strong>PacienteVendaAssistida</strong>: <code>assinatura.bill.id</code>: 353492440, <code>assinatura.customer.id</code>: 94424663, <code>assinatura.plan.id</code>: 333187, <code>assinatura.product_items[*].product.id</code>: 1181276, 1181275, 1181273, 1181272, 1211342, 1181274, <code>carteirinha.matricula</code>: 103443.</li>
+          <li><strong>Plano</strong>: <code>id</code>: 333187.</li>
+        </ul>
+        <p class="text-gray-700 mb-4">
+          <strong>Análise de Unicidade</strong>:
+          <ul class="list-disc pl-6">
+            <li>IDs compartilhados: <code>1181275</code>, <code>1181273</code>, <code>1181272</code>, <code>1211342</code>, <code>1181274</code> aparecem em Webhook e PacienteVendaAssistida (produtos iguais); <code>333188</code> aparece em Assinaturas e ErrorLog (mesmo plano); <code>333187</code> aparece em PacienteVendaAssistida e Plano (mesmo plano).</li>
+            <li>IDs únicos (aparecem em apenas uma entidade): <code>95427883</code> (Assinaturas), <code>104219</code> (Carterinha), <code>73733174</code> (ErrorLog), <code>353492440</code> (PacienteVendaAssistida), <code>94424663</code> (PacienteVendaAssistida), <code>103443</code> (PacienteVendaAssistida).</li>
+          </ul>
+        </p>
+        <p class="text-gray-700">
+          <strong>Conclusão</strong>: Existem IDs de 7 dígitos únicos em algumas entidades (como <code>95427883</code>, <code>104219</code>, <code>73733174</code>, <code>353492440</code>, <code>94424663</code>, <code>103443</code>), mas outros são compartilhados entre entidades devido a referências a planos ou produtos comuns. Na entidade Webhook, os IDs de 7 dígitos não são únicos entre os JSONs, pois referem-se aos mesmos produtos.
+        </p>
+      </div>
+    );
+
+    const App = () => (
+      <div>
+        <Navbar />
+        <div class="py-8">
+          <h2 class="text-3xl font-bold text-center mb-6">Documentação da API do Cartão Tudo Ok</h2>
+          <p class="text-gray-700 text-center mb-8">
+            Esta documentação detalha os endpoints da API do sistema de cobrança, incluindo estruturas de requisição e resposta para várias entidades.
+          </p>
+          <ConclusionSection />
+
+          <EndpointSection
+            title="Webhook - Evento de Fatura Paga"
+            description="Este endpoint fornece informações sobre uma fatura paga, incluindo detalhes sobre a fatura, cliente, método de pagamento e assinatura, recebidos via webhook."
+            objectStructure={`
+{
+  "email": string,
+  "event": {
+    "created_at": string (ISO 8601),
+    "data": {
+      "bill": {
+        "amount": string,
+        "bill_affiliates": array,
+        "bill_items": array of {
+          "amount": string,
+          "description": string | null,
+          "discount": string | null,
+          "id": number,
+          "pricing_range_id": number | null,
+          "pricing_schema": {
+            "created_at": string (ISO 8601),
+            "id": number,
+            "minimum_price": string | null,
+            "price": string
+          },
+          "pricing_ranges": array,
+          "schema_type": string,
+          "short_format": string,
+          "product": {
+            "code": string | null,
+            "id": number,
+            "name": string
+          },
+          "product_item": {
+            "id": number,
+            "product": {
+              "code": string | null,
+              "id": number,
+              "name": string
+            },
+            "quantity": number
+          }
+        },
+        "charges": array of {
+          "amount": string,
+          "attempt_count": number,
+          "created_at": string (ISO 8601),
+          "due_at": string (ISO 8601),
+          "id": number,
+          "installments": number,
+          "last_transaction": {
+            "amount": string,
+            "created_at": string (ISO 8601),
+            "fraud_detector_id": string | null,
+            "fraud_detector_score": string | null,
+            "fraud_detector_status": string | null,
+            "gateway": {
+              "connector": string,
+              "id": number,
+              "gateway_authorization": string,
+              "gateway_message": string,
+              "gateway_response_code": string
+            },
+            ...
+          },
+          ...
+        },
+        ...
+      }
+    }
+}`}
+            exampleResponse={`
+{
+  "email": "rosa2011rodrigues@hotmail.com",
+  "event": {
+    "created_at": "2024-01-13T08:55:11.293-03:00",
+    "data": {
+      "bill": {
+        "amount": "35.9",
+        "bill_affiliates": [],
+        "bill_items": [
+          {
+            "amount": "35.9",
+            "description": null,
+            "discount": null,
+            "id": 325304488,
+            "pricing_range_id": null,
+            "pricing_schema": {
+              "created_at": "2023-05-23T07:09:42.000-03:00",
+              "id": 35680408,
+              "minimum_price": null,
+              "price": "35.9"
+            },
+            "pricing_ranges": [],
+            "schema_type": "flat",
+            "short_format": "R$ 35,90",
+            "product": {
+              "code": "1",
+              "id": 1128644,
+              "name": "(01) Mensal - Sem taxa adesão"
+            },
+            "product_item": {
+              "id": 49315140,
+              "product": {
+                "code": "1",
+                "id": 1128644,
+                "name": "(01) Mensal - Sem taxa adesão"
+              },
+              "quantity": 1
+            }
+          },
+          ...
+        ],
+        ...
+      }
+    }
+  }
+}`}
+          />
+
+          <EndpointSection
+            title="Assinaturas - Lista de Faturas"
+            description="Este endpoint retorna informações sobre faturas associadas a uma assinatura, incluindo dados do cliente, método de pagamento e plano."
+            objectStructure={`
+{
+  "bills": array of {
+    "createdAt": string (ISO 8601),
+    "customer_id": number,
+    "installments": number,
+    "payment_method_code": string,
+    "plan_id": number
+  },
+  "usuario": {
+    "address": {
+      "additional_details": string,
+      "city": string,
+      "country": string,
+      "neighborhood": string,
+      "number": string,
+      "state": string,
+      "street": string,
+      "zipcode": string
+    },
+    "code": string | null,
+    "created_at": string (ISO 8601),
+    "email": string,
+    "id": number,
+    "metadata": {
+      "name": string,
+      "notes": string | null
+    },
+    "phones": array of {
+      "extension": string | null,
+      "id": number,
+      "number": string,
+      "phone_type": string,
+      "registry_code": string,
+      "status": string
+    }
+  }
+}`}
+            exampleResponse={`
+{
+  "bills": [
+    {
+      "createdAt": "2025-02-24T15:53:57.000-03:00",
+      "customer_id": 95427883,
+      "installments": 1,
+      "payment_method_code": "credit_card",
+      "plan_id": 333188
+    }
+  ],
+  "usuario": {
+    "address": {
+      "additional_details": "CASA",
+      "city": "ABREU E LIMA",
+      "country": "BR",
+      "neighborhood": "Caetés I",
+      "number": "146",
+      "street": "Rua Cento e Quinze",
+      "zipcode": "53530000"
+    },
+    "code": null,
+    "created_at": "2025-02-24T15:53:53.000-03:00",
+    "email": "nicenecy@yahoo.com.br",
+    "id": 95427883,
+    "metadata": {
+      "name": "JOSENICE SOARES DA SILVA",
+      "notes": null
+    },
+    "phones": [
+      {
+        "extension": null,
+        "id": 27077540,
+        "number": "5581997922025",
+        "phone_type": "mobile",
+        "registry_code": "93232195415",
+        "status": "inactive"
+      }
+    ]
+  }
+}`}
+          />
+
+          <EndpointSection
+            title="Autenticação - Dados do Usuário"
+            description="Este endpoint fornece informações para autenticação de usuários, incluindo email, ID e senha."
+            objectStructure={`
+{
+  "email": string,
+  "id": string,
+  "password": string
+}`}
+            exampleResponse={`
+{
+  "email": "teste@gmail.com",
+  "id": "9UApWt2NrTyC7jqpahNq",
+  "password": "963963"
+}`}
+          />
+
+          <EndpointSection
+            title="Carterinha - Informações do Beneficiário"
+            description="Este endpoint retorna dados da carteirinha de um beneficiário, incluindo CPF, matrícula e validade."
+            objectStructure={`
+{
+  "cpf": string,
+  "id": string,
+  "matricula": number,
+  "nome": string,
+  "pacienteId": string,
+  "titularId": string,
+  "validade": string
+}`}
+            exampleResponse={`
+{
+  "cpf": "34383433472",
+  "id": "002Rdvdk79ZzOtXsQA979C5aYWg1",
+  "matricula": 104219,
+  "nome": "maria alaide dos passos",
+  "pacienteId": "002Rdvdk79ZzOtXsQA979C5aYWg1",
+  "titularId": "tiUYHeqgEoPOLY89lgIbpnjMQmD2",
+  "validade": "28/04/2026"
+}`}
+          />
+
+          <EndpointSection
+            title="Endereço - Dados de Endereço"
+            description="Este endpoint fornece informações sobre o endereço de um paciente, incluindo rua, CEP, cidade e estado."
+            objectStructure={`
+{
+  "address": string,
+  "cep": string,
+  "city": {
+    "name": string,
+    "complement": string,
+    "id": string,
+    "neighborhood": string,
+    "number": string,
+    "pacienteId": string
+  },
+  "state": {
+    "name": string
+  }
+}`}
+            exampleResponse={`
+{
+  "address": "Rua General Polidoro",
+  "cep": "50740-050",
+  "city": {
+    "name": "RECIFE",
+    "complement": "APTO 101",
+    "id": "00CytLDKcvaNIuM887b7oouWT0e2",
+    "neighborhood": "Várzea",
+    "number": "349",
+    "pacienteId": "00CytLDKcvaNIuM887b7oouWT0e2"
+  },
+  "state": {
+    "name": "PE"
+  }
+}`}
+          />
+
+          <EndpointSection
+            title="ErrorLog - Registro de Erros"
+            description="Este endpoint registra erros ocorridos durante operações, como falhas em parâmetros de consulta."
+            objectStructure={`
+{
+  "data": {
+    "customer_id": number,
+    "installments": number,
+    "payment_method_code": string,
+    "plan_id": number
+  },
+  "error": {
+    "errors": array of {
+      "id": string,
+      "message": string,
+      "parameter": string
+    }
+  }
+}`}
+            exampleResponse={`
+{
+  "data": {
+    "customer_id": 73733174,
+    "installments": 1,
+    "payment_method_code": "pix",
+    "plan_id": 333188
+  },
+  "error": {
+    "errors": [
+      {
+        "id": "invalid_parameter",
+        "message": "inválido(a)",
+        "parameter": "query"
+      }
+    ]
+  }
+}`}
+          />
+
+          <EndpointSection
+            title="Ordem - Dados de Ordem de Pagamento"
+            description="Este endpoint fornece informações sobre ordens de pagamento, incluindo IDs de cartão, cliente, plano e status."
+            objectStructure={`
+{
+  "cartaoId": string,
+  "customerId": string,
+  "customerRef": string,
+  "id": string,
+  "pacienteId": string,
+  "paymentId": string,
+  "planId": string,
+  "planIdentifier": string,
+  "planoId": string,
+  "subscriptionId": string,
+  "suspended": boolean,
+  "validity": string
+}`}
+            exampleResponse={`
+{
+  "cartaoId": "32",
+  "customerId": "21",
+  "customerRef": "eeee2",
+  "id": "EkrjISJNjN08SXu2Lqrs",
+  "pacienteId": "2",
+  "paymentId": "cred",
+  "planId": "21",
+  "planIdentifier": "string",
+  "planoId": "23",
+  "subscriptionId": "sdsa",
+  "suspended": true,
+  "validity": "22/08/2099"
+}`}
+          />
+
+          <EndpointSection
+            title="Paciente - Informações do Paciente"
+            description="Este endpoint retorna dados de pacientes, incluindo CPF, email, nome e status."
+            objectStructure={`
+{
+  "address": boolean,
+  "cpf": string,
+  "createdAt": string (ISO 8601),
+  "dataNascimento": string,
+  "email": string,
+  "id": string,
+  "nome": string,
+  "phone": string,
+  "status": boolean,
+  "titularId": string,
+  "type": number,
+  "updatedAt": string (ISO 8601),
+  "vendaAssistida": boolean
+}`}
+            exampleResponse={`
+{
+  "address": false,
+  "cpf": "34383433472",
+  "createdAt": "2025-04-28T10:14:02.000-03:00",
+  "dataNascimento": "24/09/1941",
+  "email": "mariaalide23@gmail.com",
+  "id": "002Rdvdk79ZzOtXsQA979C5aYWg1",
+  "nome": "maria alaide dos passos",
+  "phone": "(81) 98967-8333",
+  "status": true,
+  "titularId": "tiUYHeqgEoPOLY89lgIbpnjMQmD2",
+  "type": 1,
+  "updatedAt": "2025-04-28T10:14:02.000-03:00",
+  "vendaAssistida": true
+}`}
+          />
+
+          <EndpointSection
+            title="PacienteVendaAssistida - Assinatura com Venda Assistida"
+            description="Este endpoint fornece detalhes de uma assinatura com venda assistida, incluindo informações da fatura, plano e produtos."
+            objectStructure={`
+{
+  "assinatura": {
+    "bill": {
+      "amount": string,
+      "billing_at": string | null,
+      "charges": array of {
+        "amount": string,
+        "attempt_count": number,
+        "created_at": string (ISO 8601),
+        "due_at": string (ISO 8601),
+        "id": number,
+        "installments": number,
+        "last_transaction": object | null,
+        "next_attempt": string | null,
+        "paid_at": string | null
+      },
+      "payment_method": {
+        "code": string,
+        "id": number,
+        "name": string,
+        "public_name": string,
+        "type": string
+      },
+      ...
+    },
+    "subscription": {
+      "billing_cycles": number | null,
+      "billing_trigger_day": number,
+      "billing_trigger_type": string,
+      "cancel_at": string | null,
+      "code": string | null,
+      "created_at": string (ISO 8601),
+      "current_period": {
+        "billing_at": string (ISO 8601),
+        "cycle": number,
+        "duration": number,
+        "end_at": string (ISO 8601),
+        "id": number,
+        "start_at": string (ISO 8601)
+      },
+      ...
+    },
+    ...
+  }
+}`}
+            exampleResponse={`
+{
+  "assinatura": {
+    "bill": {
+      "amount": "329.9",
+      "billing_at": null,
+      "charges": [
+        {
+          "amount": "329.9",
+          "attempt_count": 0,
+          "created_at": "2025-02-06T11:18:22.000-03:00",
+          "due_at": "2025-02-09T23:59:59.000-03:00",
+          "id": 366011978,
+          "installments": 1,
+          "last_transaction": null,
+          "next_attempt": null,
+          "paid_at": null
+        }
+      ],
+      "payment_method": {
+        "code": "credit_card",
+        "id": 67349,
+        "name": "Cartão de crédito",
+        "public_name": "Cartão de crédito",
+        "type": "PaymentMethod::CreditCard"
+      },
+      ...
+    },
+    "subscription": {
+      "billing_cycles": null,
+      "billing_trigger_day": 0,
+      "billing_trigger_type": "beginning_of_period",
+      "cancel_at": null,
+      "code": null,
+      "created_at": "2025-02-06T11:18:21.000-03:00",
+      "current_period": {
+        "billing_at": "2025-02-06T00:00:00.000-03:00",
+        "cycle": 1,
+        "duration": 31535999,
+        "end_at": "2026-02-05T23:59:59.000-03:00",
+        "id": 210791716,
+        "start_at": "2025-02-06T00:00:00.000-03:00"
+      },
+      ...
+    },
+    ...
+  }
+}`}
+          />
+
+          <EndpointSection
+            title="Parâmetros - Configurações do Sistema"
+            description="Este endpoint retorna parâmetros de configuração do sistema, como o número máximo de dias."
+            objectStructure={`
+{
+  "maxDias": number
+}`}
+            exampleResponse={`
+{
+  "maxDias": 180
+}`}
+          />
+
+          <EndpointSection
+            title="Plano - Detalhes do Plano"
+            description="Este endpoint fornece informações sobre um plano, incluindo ID, nome, juros e percentual."
+            objectStructure={`
+{
+  "id": string,
+  "juros": number,
+  "nome": string,
+  "percent": number
+}`}
+            exampleResponse={`
+{
+  "id": "333187",
+  "juros": 358.8,
+  "nome": "(01) Saúde Básica - anual",
+  "percent": 0.0876
+}`}
+          />
+
+          <EndpointSection
+            title="Relatório - Ações do Sistema"
+            description="Este endpoint registra ações realizadas no sistema, como desativações, com data e informações do usuário."
+            objectStructure={`
+{
+  "action": string,
+  "date": string (ISO 8601),
+  "email": string,
+  "userId": string
+}`}
+            exampleResponse={`
+{
+  "action": "disable",
+  "date": "2025-04-07T08:47:24.000-03:00",
+  "email": "marciabys80@gmail.com",
+  "userId": "QgiPlAC2hIdHRq9jjVUzhLH9omx2"
+}`}
+          />
+
+          <EndpointSection
+            title="Users - Informações de Usuários"
+            description="Este endpoint retorna dados de usuários do sistema, incluindo email, empresa, perfil e status."
+            objectStructure={`
+{
+  "createdAt": string (ISO 8601),
+  "email": string,
+  "empresa": string,
+  "id": string,
+  "name": string,
+  "perfil": string,
+  "status": boolean,
+  "telefone": string,
+  "type": number,
+  "updatedAt": string (ISO 8601)
+}`}
+            exampleResponse={`
+{
+  "createdAt": "2024-09-23T16:16:10.000-03:00",
+  "email": "comercial@okdoutor.com",
+  "empresa": "OK DOUTOR",
+  "id": "0mtOodo5FZXR7pCLqnbur2kw1qE2",
+  "name": "AMANDA DIDIER",
+  "perfil": "Admin",
+  "status": false,
+  "telefone": "(81) 2011-0400",
+  "type": 3,
+  "updatedAt": "2024-09-23T16:16:10.000-03:00"
+}`}
+          />
+        </div>
+      </div>
+    );
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
